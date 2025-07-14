@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Reagendar - Barbearia São João{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="bi bi-calendar-event"></i> Reagendar Horário
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <strong>Cliente:</strong> {{ appointment.client_name }}<br>
+                            <strong>Horário atual:</strong> {{ appointment.date|date:"d/m/Y" }} às {{ appointment.time|time:"H:i" }}
+                        </div>
+                        
+                        <form method="post">
+                            {% csrf_token %}
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.client_name.id_for_label }}" class="form-label">
+                                        <i class="bi bi-person"></i> Nome Completo
+                                    </label>
+                                    {{ form.client_name }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.client_phone.id_for_label }}" class="form-label">
+                                        <i class="bi bi-telephone"></i> Telefone
+                                    </label>
+                                    {{ form.client_phone }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.service.id_for_label }}" class="form-label">
+                                        <i class="bi bi-scissors"></i> Serviço
+                                    </label>
+                                    {{ form.service }}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.date.id_for_label }}" class="form-label">
+                                        <i class="bi bi-calendar"></i> Nova Data
+                                    </label>
+                                    {{ form.date }}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.time.id_for_label }}" class="form-label">
+                                        <i class="bi bi-clock"></i> Novo Horário
+                                    </label>
+                                    {{ form.time }}
+                                </div>
+                            </div>
+                            
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="bi bi-check"></i> Confirmar Reagendamento
+                                </button>
+                                <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">
+                                    <i class="bi bi-arrow-left"></i> Voltar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

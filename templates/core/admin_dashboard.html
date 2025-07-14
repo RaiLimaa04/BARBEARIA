@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+
+{% block title %}Painel Administrativo - Barbearia São João{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<section class="py-4 bg-primary text-white">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-speedometer2"></i> Painel Administrativo
+                </h1>
+                <p class="mb-0">Bem-vindo, {{ user.first_name|default:user.username }}!</p>
+            </div>
+            <div class="col-lg-6 text-lg-end">
+                <div class="d-flex justify-content-lg-end gap-2 mt-3 mt-lg-0">
+                    <a href="{% url 'admin_logout' %}" class="btn btn-outline-light">
+                        <i class="bi bi-box-arrow-right"></i> Sair
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Section -->
+<section class="py-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-calendar-check text-primary fs-1 mb-2"></i>
+                        <h3 class="card-title">{{ total_appointments_today }}</h3>
+                        <p class="card-text text-muted">Agendamentos Hoje</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-check-circle text-success fs-1 mb-2"></i>
+                        <h3 class="card-title">{{ confirmed_appointments }}</h3>
+                        <p class="card-text text-muted">Confirmados</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-clock text-warning fs-1 mb-2"></i>
+                        <h3 class="card-title">{{ pending_appointments }}</h3>
+                        <p class="card-text text-muted">Pendentes</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-calendar-plus text-info fs-1 mb-2"></i>
+                        <h3 class="card-title">{{ tomorrow_appointments.count }}</h3>
+                        <p class="card-text text-muted">Amanhã</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Today's Appointments -->
+<section class="py-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-calendar-day"></i> Agendamentos de Hoje ({{ today|date:"d/m/Y" }})
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if today_appointments %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Horário</th>
+                                            <th>Cliente</th>
+                                            <th>Serviço</th>
+                                            <th>Telefone</th>
+                                            <th>Status</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for appointment in today_appointments %}
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ appointment.time|time:"H:i" }}</strong>
+                                                </td>
+                                                <td>{{ appointment.client_name }}</td>
+                                                <td>
+                                                    {{ appointment.service.name }}
+                                                    <br>
+                                                    <small class="text-muted">{{ appointment.service.duration }}min - R$ {{ appointment.service.price }}</small>
+                                                </td>
+                                                <td>
+                                                    <a href="https://wa.me/55{{ appointment.client_phone|cut:' '|cut:'('|cut:')'|cut:'-' }}" 
+                                                       class="text-decoration-none" target="_blank">
+                                                        {{ appointment.client_phone }}
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    {% if appointment.is_confirmed %}
+                                                        <span class="badge bg-success">Confirmado</span>
+                                                    {% else %}
+                                                        <span class="badge bg-warning">Pendente</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        {% if not appointment.is_confirmed %}
+                                                            <a href="{% url 'confirm_appointment' appointment.id %}" 
+                                                               class="btn btn-success btn-sm" title="Confirmar">
+                                                                <i class="bi bi-check"></i>
+                                                            </a>
+                                                        {% endif %}
+                                                        <a href="{% url 'send_whatsapp_notification' appointment.id %}" 
+                                                           class="btn btn-success btn-sm" title="Enviar WhatsApp">
+                                                            <i class="bi bi-whatsapp"></i>
+                                                        </a>
+                                                        <a href="{% url 'reschedule_appointment' appointment.id %}" 
+                                                           class="btn btn-info btn-sm" title="Reagendar">
+                                                            <i class="bi bi-calendar-event"></i>
+                                                        </a>
+                                                        <a href="{% url 'cancel_appointment' appointment.id %}" 
+                                                           class="btn btn-danger btn-sm"
+                                                           onclick="return confirm('Tem certeza que deseja cancelar este agendamento?')"
+                                                           title="Cancelar">
+                                                            <i class="bi bi-x"></i>
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-calendar-x text-muted fs-1 mb-3"></i>
+                                <h5 class="text-muted">Nenhum agendamento para hoje</h5>
+                                <p class="text-muted">Aproveite para relaxar ou atualizar os serviços!</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Tomorrow's Appointments -->
+<section class="py-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-calendar-plus"></i> Agendamentos de Amanhã ({{ tomorrow|date:"d/m/Y" }})
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if tomorrow_appointments %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Horário</th>
+                                            <th>Cliente</th>
+                                            <th>Serviço</th>
+                                            <th>Telefone</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for appointment in tomorrow_appointments %}
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ appointment.time|time:"H:i" }}</strong>
+                                                </td>
+                                                <td>{{ appointment.client_name }}</td>
+                                                <td>
+                                                    {{ appointment.service.name }}
+                                                    <br>
+                                                    <small class="text-muted">{{ appointment.service.duration }}min - R$ {{ appointment.service.price }}</small>
+                                                </td>
+                                                <td>
+                                                    <a href="https://wa.me/55{{ appointment.client_phone|cut:' '|cut:'('|cut:')'|cut:'-' }}" 
+                                                       class="text-decoration-none" target="_blank">
+                                                        {{ appointment.client_phone }}
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    {% if appointment.is_confirmed %}
+                                                        <span class="badge bg-success">Confirmado</span>
+                                                    {% else %}
+                                                        <span class="badge bg-warning">Pendente</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-calendar-x text-muted fs-1 mb-3"></i>
+                                <h5 class="text-muted">Nenhum agendamento para amanhã</h5>
+                                <p class="text-muted">Os clientes ainda podem agendar para amanhã!</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

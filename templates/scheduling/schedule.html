@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Agendar Horário - Barbearia São João{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<section class="py-5 bg-primary text-white">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="display-4 fw-bold mb-3">Agendar Horário</h1>
+            <p class="lead">Escolha o melhor horário para cuidar do seu visual</p>
+        </div>
+    </div>
+</section>
+
+<!-- Appointment Form -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-body">
+                        <form method="post" id="appointmentForm">
+                            {% csrf_token %}
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.client_name.id_for_label }}" class="form-label">
+                                        <i class="bi bi-person"></i> Nome Completo
+                                    </label>
+                                    {{ form.client_name }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.client_phone.id_for_label }}" class="form-label">
+                                        <i class="bi bi-telephone"></i> Telefone
+                                    </label>
+                                    {{ form.client_phone }}
+                                    <div class="form-text">Formato: (11) 99999-9999</div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.service.id_for_label }}" class="form-label">
+                                        <i class="bi bi-scissors"></i> Serviço
+                                    </label>
+                                    {{ form.service }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.date.id_for_label }}" class="form-label">
+                                        <i class="bi bi-calendar"></i> Data
+                                    </label>
+                                    {{ form.date }}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.time.id_for_label }}" class="form-label">
+                                    <i class="bi bi-clock"></i> Horário
+                                </label>
+                                {{ form.time }}
+                                <div class="form-text">Horários disponíveis serão mostrados após selecionar a data e serviço</div>
+                            </div>
+                            
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-calendar-plus"></i> Confirmar Agendamento
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Information Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="bi bi-clock text-primary fs-1 mb-3"></i>
+                        <h5 class="card-title">Horário de Funcionamento</h5>
+                        <p class="card-text">
+                            Segunda à Sexta: 9h às 19h<br>
+                            Sábado: 8h às 17h<br>
+                            Domingo: Fechado
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="bi bi-check-circle text-success fs-1 mb-3"></i>
+                        <h5 class="card-title">Confirmação</h5>
+                        <p class="card-text">
+                            Após agendar, entraremos em contato pelo WhatsApp para confirmar seu horário.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="bi bi-whatsapp text-success fs-1 mb-3"></i>
+                        <h5 class="card-title">Atendimento</h5>
+                        <p class="card-text">
+                            Dúvidas? Fale conosco pelo WhatsApp: (11) 99999-9999
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('{{ form.date.id_for_label }}');
+    const timeInput = document.getElementById('{{ form.time.id_for_label }}');
+    const serviceInput = document.getElementById('{{ form.service.id_for_label }}');
+    const phoneInput = document.getElementById('{{ form.client_phone.id_for_label }}');
+    
+    // Máscara para telefone
+    phoneInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        value = value.replace(/^(\d{2})(\d)/, '($1) $2');
+        value = value.replace(/(\d{4,5})(\d{4})$/, '$1-$2');
+        e.target.value = value;
+    });
+    
+    // Função para carregar horários disponíveis
+    function loadAvailableTimes() {
+        const selectedDate = dateInput.value;
+        const selectedService = serviceInput.value;
+        
+        if (selectedDate && selectedService) {
+            // Mostrar loading
+            timeInput.innerHTML = '<option value="">Carregando horários...</option>';
+            
+            fetch(`/agendamento/api/available-times/?date=${selectedDate}&service=${selectedService}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Limpar opções existentes
+                    timeInput.innerHTML = '<option value="">Selecione um horário</option>';
+                    
+                    // Adicionar horários disponíveis
+                    if (data.times && data.times.length > 0) {
+                        data.times.forEach(timeSlot => {
+                            const option = document.createElement('option');
+                            option.value = timeSlot.time;
+                            option.textContent = timeSlot.display;
+                            timeInput.appendChild(option);
+                        });
+                    } else {
+                        const option = document.createElement('option');
+                        option.value = "";
+                        option.textContent = "Nenhum horário disponível";
+                        timeInput.appendChild(option);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar horários:', error);
+                    timeInput.innerHTML = '<option value="">Erro ao carregar horários</option>';
+                });
+        } else {
+            timeInput.innerHTML = '<option value="">Selecione uma data e serviço primeiro</option>';
+        }
+    }
+    
+    // Carregar horários quando a data ou serviço mudar
+    dateInput.addEventListener('change', loadAvailableTimes);
+    serviceInput.addEventListener('change', loadAvailableTimes);
+    
+    // Carregar horários iniciais se já há valores selecionados
+    if (dateInput.value && serviceInput.value) {
+        loadAvailableTimes();
+    }
+});
+</script>
+{% endblock %}
